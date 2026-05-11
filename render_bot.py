@@ -79,7 +79,7 @@ async def debate(q):
     return r
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Бот готов.\nТекст — дебаты 4 агентов\nПоддерживает: BTC, ETH, SOL, AAPL, TSLA, S&P, DXY, Gold, Oil, EUR/USD и др.")
+    await update.message.reply_text("Бот готов.\nТекст — дебаты 4 агентов")
 
 async def msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q=update.message.text;await update.message.reply_text("Анализирую...")
@@ -88,16 +88,13 @@ async def msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
         for i in range(0,len(r),4000):await update.message.reply_text(r[i:i+4000])
     else:await update.message.reply_text(r)
 
-async def main_bot():
+def run_bot():
     app_tg = Application.builder().token(TELEGRAM_TOKEN).build()
     app_tg.add_handler(CommandHandler("start",start))
     app_tg.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,msg))
     print("Бот запущен!")
-    await app_tg.run_polling()
-
-def run_flask():
-    app.run(host="0.0.0.0", port=10000)
+    app_tg.run_polling()
 
 if __name__=="__main__":
     threading.Thread(target=run_flask, daemon=True).start()
-    asyncio.run(main_bot())
+    run_bot()
