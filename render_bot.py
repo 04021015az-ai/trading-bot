@@ -41,7 +41,7 @@ def get_real_price(ticker):
 def detect_tickers(q):
     q_upper = q.upper().strip()
     patterns = {
-        r'\bBTC\b':'BTC-USD', r'\bBITCOIN\b':'BTC-USD', r'БИТКОИН':'BTC-USD', r'БИТОК':'BTC-USD',
+        r'\bBTC\b':'BTC-USD', r'\bBITCOIN\b':'BTC-USD', r'БИТКОИН':'BTC-USD',
         r'\bETH\b':'ETH-USD', r'ЭФИР':'ETH-USD',
         r'\bSOL\b':'SOL-USD', r'\bXRP\b':'XRP-USD', r'\bDOGE\b':'DOGE-USD',
         r'\bAAPL\b':'AAPL', r'\bTSLA\b':'TSLA', r'\bNVDA\b':'NVDA',
