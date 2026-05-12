@@ -1,18 +1,17 @@
-import asyncio
+import asyncio, os, re
+from datetime import datetime
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from openai import OpenAI
 import yfinance as yf, pandas as pd, numpy as np
-import os, re
-from datetime import datetime
 
-TELEGRAM_TOKEN = "8614945660:AAH39OdVEZv6xF2x9kqEBtEWswpi7tVLYUI"
-GROQ_KEY = "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"
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "8614945660:AAH39OdVEZv6xF2x9kqEBtEWswpi7tVLYUI")
+GROQ_KEY = os.getenv("GROQ_KEY", "")
 CHAT_ID = 5387494738
 today_full = datetime.now().strftime("%d.%m.%Y %H:%M")
 
 MODELS = ["llama-3.3-70b-versatile","meta-llama/llama-4-maverick-17b-128e-instruct","qwen/qwen3-32b","openai/gpt-oss-120b"]
-MODEL_NAMES = {"llama-3.3-70b-versatile":"🦙 Llama 3.3","meta-llama/llama-4-maverick-17b-128e-instruct":"🦅 Llama 4","qwen/qwen3-32b":"🐉 Qwen 3","openai/gpt-oss-120b":"🤖 GPT-OSS"}
+MODEL_NAMES = {"llama-3.3-70b-versatile":"Llama 3.3","meta-llama/llama-4-maverick-17b-128e-instruct":"Llama 4","qwen/qwen3-32b":"Qwen 3","openai/gpt-oss-120b":"GPT-OSS"}
 JUDGE = "llama-3.3-70b-versatile"
 
 SYSTEM_PROMPT = f"""Сегодня {today_full}. Ты профессиональный трейдер.
