@@ -5,26 +5,19 @@ from openai import OpenAI
 import yfinance as yf, pandas as pd, numpy as np
 import os, re
 from datetime import datetime
-from flask import Flask, render_template_string
-import threading
 
 TELEGRAM_TOKEN = "8614945660:AAH39OdVEZv6xF2x9kqEBtEWswpi7tVLYUI"
-OPENROUTER_KEY = "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"
+GROQ_KEY = "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"
 CHAT_ID = 5387494738
 today_full = datetime.now().strftime("%d.%m.%Y %H:%M")
 
-MODELS = ["google/gemini-2.0-flash-001","anthropic/claude-3-haiku","deepseek/deepseek-chat","qwen/qwen-2.5-72b-instruct"]
-MODEL_NAMES = {"google/gemini-2.0-flash-001":"Gemini","anthropic/claude-3-haiku":"Claude","deepseek/deepseek-chat":"DeepSeek","qwen/qwen-2.5-72b-instruct":"Qwen"}
-JUDGE = "google/gemini-2.0-flash-001"
+MODELS = ["llama-3.3-70b-versatile","gemma2-9b-it","mixtral-8x7b-32768","qwen-2.5-32b"]
+MODEL_NAMES = {"llama-3.3-70b-versatile":"Llama","gemma2-9b-it":"Gemma","mixtral-8x7b-32768":"Mixtral","qwen-2.5-32b":"Qwen"}
+JUDGE = "llama-3.3-70b-versatile"
 
 SYSTEM_PROMPT = f"Сегодня {today_full}. Ты профессиональный трейдер. Отвечай ТОЛЬКО на русском. Используй ТОЛЬКО данные из запроса. Пиши кратко: цена, тренд, уровни, рекомендация. Без примеров, без общих слов."
 
-client = OpenAI(base_url="https://openrouter.ai/api/v1",api_key=OPENROUTER_KEY,timeout=30)
-app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return render_template_string("<h1>Bot is running!</h1><p>Status: OK</p><p>Date: {{ date }}</p>", date=today_full)
+client = OpenAI(base_url="https://api.groq.com/openai/v1",api_key=GROQ_KEY)
 
 def get_real_price(ticker):
     try:
@@ -79,7 +72,7 @@ async def debate(q):
     return r
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Бот готов.\nТекст — дебаты 4 агентов")
+    await update.message.reply_text("Бот готов.\nТекст — дебаты 4 агентов (Groq)")
 
 async def msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q=update.message.text;await update.message.reply_text("Анализирую...")
@@ -88,13 +81,12 @@ async def msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
         for i in range(0,len(r),4000):await update.message.reply_text(r[i:i+4000])
     else:await update.message.reply_text(r)
 
-def run_bot():
-    app_tg = Application.builder().token(TELEGRAM_TOKEN).build()
-    app_tg.add_handler(CommandHandler("start",start))
-    app_tg.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,msg))
+def main():
+    app = Application.builder().token(TELEGRAM_TOKEN).build()
+    app.add_handler(CommandHandler("start",start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,msg))
     print("Бот запущен!")
-    app_tg.run_polling()
+    app.run_polling()
 
 if __name__=="__main__":
-    threading.Thread(target=run_flask, daemon=True).start()
-    run_bot()
+    main()
