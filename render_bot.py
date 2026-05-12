@@ -9,7 +9,7 @@ from flask import Flask, render_template_string
 import threading
 
 TELEGRAM_TOKEN = "8614945660:AAH39OdVEZv6xF2x9kqEBtEWswpi7tVLYUI"
-OPENROUTER_KEY = "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"
+OPENROUTER_KEY = "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"
 CHAT_ID = 5387494738
 today_full = datetime.now().strftime("%d.%m.%Y %H:%M")
 
