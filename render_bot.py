@@ -14,19 +14,7 @@ MODELS = ["llama-3.3-70b-versatile","meta-llama/llama-4-maverick-17b-128e-instru
 MODEL_NAMES = {"llama-3.3-70b-versatile":"Llama 3.3","meta-llama/llama-4-maverick-17b-128e-instruct":"Llama 4","qwen/qwen3-32b":"Qwen 3","openai/gpt-oss-120b":"GPT-OSS"}
 JUDGE = "llama-3.3-70b-versatile"
 
-SYSTEM_PROMPT = f"""Сегодня {today_full}. Ты профессиональный трейдер.
-Отвечай ТОЛЬКО на русском языке. Никакого английского.
-Используй ТОЛЬКО данные из запроса. Не выдумывай цифры.
-
-ФОРМАТ ОТВЕТА (соблюдай строго):
-Цена: [точная цифра из данных]
-Тренд: [восходящий/нисходящий/боковой]
-Поддержка: [цифра]
-Сопротивление: [цифра]
-Рекомендация: [покупать/продавать/держать/ждать]
-Вероятность роста: [%]
-Вероятность падения: [%]
-"""
+SYSTEM_PROMPT = "Сегодня " + today_full + ". Ты профессиональный трейдер. Отвечай ТОЛЬКО на русском. Используй данные из запроса. Формат: Цена, Тренд, Поддержка, Сопротивление, Рекомендация, Вероятность."
 
 client = OpenAI(base_url="https://api.groq.com/openai/v1",api_key=GROQ_KEY)
 
@@ -38,26 +26,25 @@ def get_real_price(ticker):
             price = float(d["Close"].iloc[-1])
             high = float(d["High"].max())
             low = float(d["Low"].min())
-            return f"\n[РЕАЛЬНЫЕ ДАННЫЕ на {today_full}: {ticker} = {price:.2f}, 24h High={high:.2f}, 24h Low={low:.2f}]\n"
+            return "\n[РЕАЛЬНЫЕ ДАННЫЕ на " + today_full + ": " + ticker + " = " + str(round(price,2)) + ", 24h High=" + str(round(high,2)) + ", 24h Low=" + str(round(low,2)) + "]\n"
     except: pass
     return ""
 
 def detect_tickers(q):
     q_upper = q.upper().strip()
     patterns = {
-        r'\bBTC\b':'BTC-USD', r'\bBITCOIN\b':'BTC-USD', r'БИТКОИН':'BTC-USD', r'БИТОК':'BTC-USD',
-        r'\bETH\b':'ETH-USD', r'ЭФИР':'ETH-USD',
-        r'\bSOL\b':'SOL-USD', r'\bXRP\b':'XRP-USD', r'\bDOGE\b':'DOGE-USD',
-        r'\bAAPL\b':'AAPL', r'\bTSLA\b':'TSLA', r'\bNVDA\b':'NVDA',
-        r'\bS&P\b':'^GSPC', r'\bNASDAQ\b':'^IXIC', r'\bDOW\b':'^DJI',
-        r'\bDXY\b':'DX-Y.NYB', r'ИНДЕКС.ДОЛЛАР':'DX-Y.NYB',
-        r'\bGOLD\b':'GC=F', r'ЗОЛОТ':'GC=F',
-        r'\bOIL\b':'CL=F', r'НЕФТ':'CL=F',
-        r'\bEUR/USD\b':'EURUSD=X', r'\bGBP/USD\b':'GBPUSD=X', r'\bUSD/JPY\b':'USDJPY=X',
+        'BTC':'BTC-USD','BITCOIN':'BTC-USD','БИТКОИН':'BTC-USD',
+        'ETH':'ETH-USD','ЭФИР':'ETH-USD',
+        'SOL':'SOL-USD','XRP':'XRP-USD','DOGE':'DOGE-USD',
+        'AAPL':'AAPL','TSLA':'TSLA','NVDA':'NVDA',
+        'S&P':'^GSPC','NASDAQ':'^IXIC','DOW':'^DJI',
+        'DXY':'DX-Y.NYB','GOLD':'GC=F','ЗОЛОТ':'GC=F',
+        'OIL':'CL=F','НЕФТ':'CL=F',
+        'EUR/USD':'EURUSD=X','GBP/USD':'GBPUSD=X','USD/JPY':'USDJPY=X',
     }
     found = []
     for pat, ticker in patterns.items():
-        if re.search(pat, q_upper): found.append(ticker)
+        if pat in q_upper: found.append(ticker)
     return list(set(found))
 
 async def ask(model,q):
@@ -69,7 +56,7 @@ async def ask(model,q):
             ans = re.sub(r'https?://\S+', '', ans)
             return ans
         return "нет ответа"
-    except Exception as e:return f"ошибка: {e}"
+    except Exception as e:return "ошибка: " + str(e)
 
 async def debate(q):
     tickers = detect_tickers(q)
@@ -78,16 +65,16 @@ async def debate(q):
     enriched_q = q + real_data
     ans = {}
     for m in MODELS: ans[m] = await ask(m, enriched_q)
-    p = SYSTEM_PROMPT + "\nСобери краткий итог из 4 ответов ниже. Только суть. Строго по формату.\n\n"
-    for m,a in ans.items(): p += f"--- {MODEL_NAMES.get(m,m)} ---\n{a}\n\n"
+    p = SYSTEM_PROMPT + "\nСобери краткий итог из 4 ответов ниже.\n\n"
+    for m,a in ans.items(): p += "--- " + MODEL_NAMES.get(m,m) + " ---\n" + a + "\n\n"
     v = await ask(JUDGE, p)
-    r = f"{real_data.replace('[','').replace(']','')}\n\n"
-    for m,a in ans.items(): r += f"{MODEL_NAMES.get(m,m)} считает:\n{a}\n\n"
-    r += f"ИТОГ ОТ СУДЬИ:\n{v}"
+    r = real_data.replace('[','').replace(']','') + "\n\n"
+    for m,a in ans.items(): r += MODEL_NAMES.get(m,m) + " считает:\n" + a + "\n\n"
+    r += "ИТОГ:\n" + v
     return r
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Бот готов. Задай вопрос про любой актив — 4 агента дадут анализ.")
+    await update.message.reply_text("Бот готов. Задай вопрос про любой актив.")
 
 async def msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q=update.message.text;await update.message.reply_text("Анализирую...")
